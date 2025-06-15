@@ -86,7 +86,13 @@ class StreamDemo:
         self.device = args.device
         self.online_vis = args.online_vis
         self.max_frames = args.max_frames
-        self.intrinsic = np.loadtxt(os.path.join(args.data_root, 'intrinsic.txt'))
+        intrinsic_file = os.path.join(args.data_root, 'intrinsic.txt')
+        if not os.path.exists(intrinsic_file):
+            warnings.warn(f"Intrinsic file not found at {intrinsic_file}. Using default intrinsic.")
+            intrinsic = np.array([[577.870605,0,319.5],[0,577.870605,239.5],[0,0,1]])
+        else:
+            intrinsic = np.loadtxt(intrinsic_file)
+        self.intrinsic = intrinsic
         self.dataloader = StreamDataloader(args.data_root, args.interval)
         
         ckpt_path = os.path.join(os.path.dirname(os.path.dirname(current_path)), 'data', 'FastSAM-x.pt')
@@ -162,14 +168,15 @@ class StreamDemo:
         
         time0 = time.time()
         while True:
+            breakpoint()
             frame_i, color_map, depth_map, pose, end_flag = self.dataloader.next()
             end_flag = end_flag or (frame_i >= self.args.max_frames)
             if end_flag:
                 self.vis(None, None, None, True)
                 break
             group_ids, pts = self.data_preprocessor.process_single_frame(color_map, depth_map, pose)
-            points = torch.from_numpy(pts).float()
-            sp_pts_mask = torch.from_numpy(group_ids).long().to(self.device)
+            points = torch.from_numpy(pts).float()  # torch.Size([20000, 6])
+            sp_pts_mask = torch.from_numpy(group_ids).long().to(self.device)  # torch.Size([20000])
             input_dict = {'points':points.to(self.device)}
             data_sample = Det3DDataSample()
             gt_pts_seg = PointData()
@@ -229,7 +236,8 @@ def main():
     parser.add_argument('--max_frames', type=int, default=10000, help='Max frame number to process')
     # args about model
     parser.add_argument('--config', type=str, default='configs/ESAM-E_CA/ESAM-E_online_stream.py', help='Config file')
-    parser.add_argument('--checkpoint', type=str, default='work_dirs/ESAM-E_online_scannet200_CA/epoch_128.pth', help='Checkpoint file')
+    # parser.add_argument('--checkpoint', type=str, default='work_dirs/ESAM-E_online_scannet200_CA/epoch_128.pth', help='Checkpoint file')
+    parser.add_argument('--checkpoint', type=str, default='data/ESAM-E_CA_online_epoch_128.pth', help='Checkpoint file')
     parser.add_argument('--device', default='cuda:0', help='Device used for inference')
     # args about visualization
     parser.add_argument('--use_vis', type=int, default="1", help="Whether to enable visualization, set to 1 to enable")
@@ -237,7 +245,6 @@ def main():
     args = parser.parse_args()
     
     assert args.data_root is not None, "The input data root must be specified"
-      
     demo = StreamDemo(args)
     demo.run()
 

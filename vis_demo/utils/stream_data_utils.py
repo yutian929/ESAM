@@ -96,18 +96,31 @@ class StreamDataloader:
         self.data_root = data_root
         self.counter = 0
         self.interval = interval
-        self.color_paths = sorted(os.listdir(os.path.join(data_root,'color')), key=lambda f:int(os.path.splitext(f)[0]))
+        # self.color_paths = sorted(os.listdir(os.path.join(data_root,'color')), key=lambda f:int(os.path.splitext(f)[0]))
+        self.color_paths = sorted(os.listdir(os.path.join(data_root,'image')))
         self.img_nums = len(self.color_paths)
-    
+
+    # def _get_item(self, i):
+    #     rgb_path = os.path.join(self.data_root, 'color', self.color_paths[i])
+    #     depth_path = rgb_path.replace('color', 'depth').replace('jpg', 'png')
+    #     pose_path = rgb_path.replace('color', 'pose').replace('jpg', 'txt')
+    #     rgb_img = cv2.imread(rgb_path)
+    #     rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
+    #     depth_img = cv2.imread(depth_path, -1)
+    #     pose = np.loadtxt(pose_path)
+    #     return i, rgb_img, depth_img, pose
     def _get_item(self, i):
-        rgb_path = os.path.join(self.data_root, 'color', self.color_paths[i])
-        depth_path = rgb_path.replace('color', 'depth').replace('jpg', 'png')
-        pose_path = rgb_path.replace('color', 'pose').replace('jpg', 'txt')
+        rgb_path = os.path.join(self.data_root, 'image', self.color_paths[i])
+        depth_path = rgb_path.replace('image', 'depth').replace('png', 'png')
+        pose_path = rgb_path.replace('image', 'pose').replace('png', 'npy')
+        # 删除最后出现的一个pose, pose00001.npy -> 00001.npy
+        pose_path = pose_path[:pose_path.rfind('pose')] + pose_path[pose_path.rfind('pose')+4:]
         rgb_img = cv2.imread(rgb_path)
         rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_BGR2RGB)
         depth_img = cv2.imread(depth_path, -1)
-        pose = np.loadtxt(pose_path)
+        pose = np.load(pose_path)
         return i, rgb_img, depth_img, pose
+
 
     def next(self):
         if self.counter >= self.img_nums:

@@ -4,6 +4,7 @@ import os
 
 class vis_pointcloud:
     def __init__(self, use_vis, online_vis=False):
+        self.online_vis = online_vis
         self.use_vis=use_vis
         if self.use_vis==0:
             return

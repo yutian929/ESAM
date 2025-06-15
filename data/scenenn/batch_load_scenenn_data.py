@@ -141,6 +141,9 @@ def batch_export(max_num_point,
 
     scan_names = sorted(os.listdir(scannet_dir))
     for scan_name in scan_names:
+        # 如果scan_name不是文件夹，则跳过
+        if not osp.isdir(osp.join(scannet_dir, scan_name)):
+            continue
         print('-' * 20 + 'begin')
         print(datetime.datetime.now())
         print(scan_name)
